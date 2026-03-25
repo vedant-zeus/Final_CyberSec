@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard — BLOCKED</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:       #ef4444;
+      --red-dark:  #b91c1c;
+      --red-glow:  rgba(239, 68, 68, 0.4);
+      --bg:        #0a0a0a;
+      --bg-card:   #111111;
+      --bg-surface:#1a1a1a;
+      --border:    #2d2d2d;
+      --text:      #f5f5f5;
+      --text-dim:  #a0a0a0;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* Fullscreen overlay — always on top, non-dismissible */
+    .blocker-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse at center, rgba(185,28,28,0.15) 0%, transparent 70%),
+        var(--bg);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    /* Animated background grid */
+    .blocker-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(239,68,68,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(239,68,68,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+
+    .warning-icon {
+      font-size: 72px;
+      line-height: 1;
+      animation: warnPulse 1.2s ease-in-out infinite;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 0 20px rgba(239,68,68,0.8));
+    }
+
+    @keyframes warnPulse {
+      0%, 100% { transform: scale(1);   filter: drop-shadow(0 0 16px rgba(239,68,68,0.7)); }
+      50%       { transform: scale(1.08); filter: drop-shadow(0 0 32px rgba(239,68,68,1.0)); }
+    }
+
+    .blocker-card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      border: 2px solid var(--red);
+      border-radius: 16px;
+      padding: 32px 36px;
+      max-width: 680px;
+      width: 100%;
+      box-shadow:
+        0 0 0 1px rgba(239,68,68,0.1),
+        0 0 60px rgba(239,68,68,0.2),
+        0 32px 64px rgba(0,0,0,0.5);
+      animation: cardAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardAppear {
+      0% { transform: scale(0.85) translateY(20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .threat-level-banner {
+      background: linear-gradient(135deg, var(--red-dark), var(--red));
+      color: #fff;
+      text-align: center;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: bannerGlow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes bannerGlow {
+      from { box-shadow: 0 0 12px rgba(239,68,68,0.5); }
+      to   { box-shadow: 0 0 24px rgba(239,68,68,0.8); }
+    }
+
+    .blocker-title {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--red);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .blocker-subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .flagged-url-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .flagged-url-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+
+    .flagged-url-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--red);
+      word-break: break-all;
+      line-height: 1.6;
+    }
+
+    .risk-score-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 14px 16px;
+      background: var(--bg-surface);
+      border-radius: 10px;
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+
+    .risk-score-big {
+      font-size: 40px;
+      font-weight: 900;
+      color: var(--red);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+
+    .risk-score-info { flex: 1; }
+    .risk-score-label { font-size: 13px; font-weight: 700; color: var(--text); }
+    .risk-score-desc { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+    .risk-bar-track {
+      height: 6px; background: var(--bg-surface);
+      border-radius: 10px; overflow: hidden; margin-top: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .risk-bar-fill {
+      height: 100%; border-radius: 10px;
+      background: linear-gradient(90deg, #b91c1c, #ef4444, #f87171);
+      background-size: 200% 100%;
+      animation: barAnim 1.5s linear infinite;
+    }
+
+    @keyframes barAnim {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* Threat Reasons */
+    .reasons-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    .reasons-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+    .reason-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .reason-bullet { color: var(--red); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    /* Actions */
+    .actions-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-go-back {
+      flex: 1;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-go-back:hover { background: linear-gradient(135deg, #2563eb, #3b82f6); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,130,246,0.4); }
+
+    .btn-proceed {
+      background: var(--bg-surface);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-proceed:hover { border-color: #6b7280; color: var(--text); }
+
+    /* Advanced Proceed Dialog */
+    .proceed-dialog {
+      display: none;
+      margin-top: 16px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .proceed-dialog.visible { display: block; }
+
+    .proceed-dialog p {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .proceed-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    .proceed-input:focus { border-color: var(--red); }
+
+    .proceed-confirm-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .proceed-confirm-row label { font-size: 11px; color: var(--text-dim); cursor: pointer; }
+
+    .btn-confirm-proceed {
+      width: 100%;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .btn-confirm-proceed.enabled { opacity: 1; pointer-events: all; }
+    .btn-confirm-proceed.enabled:hover { background: rgba(239,68,68,0.25); }
+
+    /* Footer */
+    .blocker-footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    .phishtank-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="blocker-overlay" role="alertdialog" aria-modal="true" aria-labelledby="blockerTitle">
+
+    <div class="warning-icon">🚨</div>
+
+    <div class="blocker-card">
+      <div class="threat-level-banner" id="threatBanner">⚠ PHISHING DETECTED ⚠</div>
+
+      <h1 class="blocker-title" id="blockerTitle">This Site Has Been Blocked</h1>
+      <p class="blocker-subtitle">
+        PhishGuard has detected strong indicators that this page is attempting<br>
+        to steal your credentials, payment information, or personal data.
+      </p>
+
+      <!-- PhishTank Badge (shown if confirmed) -->
+      <div id="phishTankBadge" class="phishtank-badge" style="display:none">
+        🎣 Confirmed in PhishTank Verified Database
+      </div>
+
+      <!-- Flagged URL -->
+      <div class="flagged-url-box">
+        <span class="flagged-url-label">🔗 URL</span>
+        <span class="flagged-url-value" id="flaggedUrl">—</span>
+      </div>
+
+      <!-- Risk Score -->
+      <div class="risk-score-row">
+        <div class="risk-score-big" id="riskScore">—%</div>
+        <div class="risk-score-info">
+          <div class="risk-score-label">Risk Score</div>
+          <div class="risk-score-desc">Above 80% triggers automatic blocking</div>
+          <div class="risk-bar-track">
+            <div class="risk-bar-fill" id="riskBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Threat Reasons -->
+      <p class="reasons-title">Why Was This Site Blocked?</p>
+      <ul class="reasons-list" id="reasonsList">
+        <li class="reason-item"><span class="reason-bullet">▶</span>Loading analysis...</li>
+      </ul>
+
+      <!-- Actions -->
+      <div class="actions-row">
+        <button class="btn-go-back" id="goBackBtn">
+          🛡️ Go Back Safely
+        </button>
+        <button class="btn-proceed" id="proceedBtn">
+          ⚠ Proceed Anyway
+        </button>
+      </div>
+
+      <!-- Advanced multi-step dismiss -->
+      <div class="proceed-dialog" id="proceedDialog">
+        <p>
+          <strong style="color:#ef4444">WARNING:</strong>
+          Proceeding to this site may expose your credentials, financial data, or device to attack.
+          PhishGuard strongly advises you to go back. If you understand the risk, type
+          <em>"I understand the risk"</em> below and check the confirmation box to proceed.
+        </p>
+        <input type="text" class="proceed-input" id="riskPhrase" placeholder='Type "I understand the risk"' />
+        <div class="proceed-confirm-row">
+          <input type="checkbox" id="riskCheckbox" />
+          <label for="riskCheckbox">I understand this site may compromise my security</label>
+        </div>
+        <button class="btn-confirm-proceed" id="confirmProceedBtn">⚠ Ignore Warning &amp; Visit Site</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="blocker-footer">
+      🛡️ PhishGuard — Real-time Phishing Protection &nbsp;|&nbsp;
+      <span id="timestamp"></span>
+    </div>
+  </div>
+
+  <script>
+    // Parse URL params
+    const params = new URLSearchParams(window.location.search);
+    const blockedUrl   = params.get('url')    || 'Unknown URL';
+    const score        = parseInt(params.get('score') || '80', 10);
+    let reasons        = [];
+    try { reasons = JSON.parse(decodeURIComponent(params.get('reasons') || '[]')); } catch {}
+
+    // Populate URL
+    document.getElementById('flaggedUrl').textContent = blockedUrl;
+
+    // Risk score
+    document.getElementById('riskScore').textContent = `${score}%`;
+    document.getElementById('riskBar').style.width = `${score}%`;
+
+    // PhishTank badge
+    if (reasons.some(r => r && r.includes('PhishTank'))) {
+      document.getElementById('phishTankBadge').style.display = 'inline-flex';
+    }
+
+    // Reasons list
+    const ul = document.getElementById('reasonsList');
+    if (reasons.length > 0) {
+      ul.innerHTML = reasons.map(r => `
+        <li class="reason-item">
+          <span class="reason-bullet">▶</span>
+          <span>${r || 'Suspicious pattern detected.'}</span>
+        </li>
+      `).join('');
+    } else {
+      ul.innerHTML = `
+        <li class="reason-item"><span class="reason-bullet">▶</span>High overall risk score (≥80%) based on multiple signals.</li>
+        <li class="reason-item"><span class="reason-bullet">▶</span>Page failed PhishGuard's multi-signal phishing detection.</li>
+        <li class="reason-item"><span class="reason-bullet">▶</span>Do not enter any personal, financial, or login information.</li>
+      `;
+    }
+
+    // Timestamp
+    document.getElementById('timestamp').textContent = 'Blocked at ' + new Date().toLocaleTimeString();
+
+    // Go Back
+    document.getElementById('goBackBtn').addEventListener('click', () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        window.close();
+      }
+    });
+
+    // Proceed Flow
+    const proceedBtn     = document.getElementById('proceedBtn');
+    const proceedDialog  = document.getElementById('proceedDialog');
+    const riskPhrase     = document.getElementById('riskPhrase');
+    const riskCheckbox   = document.getElementById('riskCheckbox');
+    const confirmBtn     = document.getElementById('confirmProceedBtn');
+
+    proceedBtn.addEventListener('click', () => {
+      proceedDialog.classList.add('visible');
+      proceedBtn.style.display = 'none';
+    });
+
+    function checkProceedEligibility() {
+      const phraseOk = riskPhrase.value.trim().toLowerCase() === 'i understand the risk';
+      const checkOk  = riskCheckbox.checked;
+      if (phraseOk && checkOk) {
+        confirmBtn.classList.add('enabled');
+      } else {
+        confirmBtn.classList.remove('enabled');
+      }
+    }
+
+    riskPhrase.addEventListener('input', checkProceedEligibility);
+    riskCheckbox.addEventListener('change', checkProceedEligibility);
+
+    confirmBtn.addEventListener('click', () => {
+      if (!confirmBtn.classList.contains('enabled')) return;
+      // Navigate to blocked URL bypassing blocker
+      chrome.storage.local.get('falsePositives').then(data => {
+        const fps = data.falsePositives || [];
+        if (!fps.includes(blockedUrl)) fps.push(blockedUrl);
+        chrome.storage.local.set({ falsePositives: fps }).then(() => {
+          window.location.href = blockedUrl;
+        });
+      }).catch(() => {
+        window.location.href = blockedUrl;
+      });
+    });
+
+    // Prevent any keyboard shortcuts for closing / developer tools from working easily
+    document.addEventListener('keydown', (e) => {
+      // Allow typing in the risk phrase input
+      if (document.activeElement === riskPhrase) return;
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

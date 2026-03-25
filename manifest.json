@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "PhishGuard",
+  "version": "1.0.0",
+  "description": "Real-time, multi-signal phishing detection with Explainable AI — protecting you from credential harvesting, homograph attacks, and malicious overlays.",
+  "author": "PhishGuard Security",
+
+  "icons": {
+    "16":  "icons/icon16.svg",
+    "48":  "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.svg",
+      "48":  "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    },
+    "default_title": "PhishGuard — Click to see threat analysis"
+  },
+
+  "background": {
+    "service_worker": "background/service_worker.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content_script.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED",
+      "all_frames": false
+    }
+  ],
+
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "webRequest",
+    "webNavigation",
+    "storage",
+    "tabs",
+    "declarativeNetRequest",
+    "alarms"
+  ],
+
+  "host_permissions": ["<all_urls>"],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["blocker/blocker.html", "icons/*", "icons/*.svg", "icons/*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+
+  "declarative_net_request": {
+    "rule_resources": []
+  }
+}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard — Threat Analysis</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="logo-shield">🛡️</span>
+      <span class="logo-text">PhishGuard</span>
+    </div>
+    <button class="btn-icon" id="settingsBtn" title="Settings">⚙️</button>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-state" id="loadingState">
+    <div class="spinner"></div>
+    <p>Analyzing page...</p>
+  </div>
+
+  <!-- Main Content (hidden while loading) -->
+  <main class="main-content" id="mainContent" hidden>
+
+    <!-- Site Info + Risk Score -->
+    <section class="risk-section" id="riskSection">
+      <div class="site-info">
+        <span class="site-label">Current Site:</span>
+        <span class="site-domain" id="siteDomain">—</span>
+      </div>
+      <div class="risk-bar-wrap">
+        <div class="risk-bar-track">
+          <div class="risk-bar-fill" id="riskBarFill"></div>
+        </div>
+        <div class="risk-label-row">
+          <span class="risk-pct" id="riskPct">0%</span>
+          <span class="risk-badge" id="riskBadge">SAFE</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary sentence -->
+    <section class="summary-section" id="summarySection">
+      <p class="summary-text" id="summaryText">Scanning...</p>
+    </section>
+
+    <!-- Why Suspicious? -->
+    <section class="reasons-section" id="reasonsSection" hidden>
+      <h2 class="section-title">
+        <span class="section-icon">⚠️</span>
+        Why Is This Suspicious?
+      </h2>
+      <ul class="reasons-list" id="reasonsList"></ul>
+    </section>
+
+    <!-- Signal Breakdown Grid -->
+    <section class="signals-section">
+      <h2 class="section-title">
+        <span class="section-icon">📊</span>
+        Signal Breakdown
+      </h2>
+      <div class="signal-grid" id="signalGrid">
+        <!-- Populated by popup.js -->
+      </div>
+    </section>
+
+    <!-- XAI Details -->
+    <section class="xai-section" id="xaiSection" hidden>
+      <h2 class="section-title">
+        <span class="section-icon">🔬</span>
+        AI Explanation (Top Factors)
+      </h2>
+      <div class="xai-list" id="xaiList"></div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Actions -->
+  <footer class="footer" id="mainFooter" hidden>
+    <button class="btn-secondary" id="reportFPBtn">🚩 Report False Positive</button>
+    <button class="btn-primary"   id="detailsBtn">🔍 Full Details</button>
+  </footer>
+
+  <!-- Settings Panel (hidden by default) -->
+  <div class="settings-panel" id="settingsPanel" hidden>
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button class="btn-icon" id="closeSettingsBtn">✕</button>
+    </div>
+    <div class="settings-body">
+      <label class="setting-item">
+        <span>Enable Auto-Block</span>
+        <input type="checkbox" id="autoBlockToggle" checked />
+      </label>
+      <label class="setting-item">
+        <span>PhishTank Checks</span>
+        <input type="checkbox" id="phishTankToggle" checked />
+      </label>
+      <label class="setting-item">
+        <span>Show XAI Explanations</span>
+        <input type="checkbox" id="xaiToggle" checked />
+      </label>
+      <div class="setting-item">
+        <span>PhishTank API Key</span>
+        <input type="text" id="apiKeyInput" placeholder="Optional" class="api-key-input" />
+      </div>
+      <button class="btn-primary full-width" id="saveSettingsBtn">Save Settings</button>
+      <div class="settings-divider"></div>
+      <h3 class="settings-sub">Blocked URL History</h3>
+      <div class="history-list" id="historyList"><em>No blocked sites yet.</em></div>
+      <button class="btn-secondary full-width" id="clearHistoryBtn">🗑️ Clear History</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+    <filter id="glowFilter">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="128" height="128" rx="16" fill="#0d1117"/>
+  <!-- Glow -->
+  <ellipse cx="64" cy="64" rx="50" ry="50" fill="url(#glow)"/>
+  <!-- Shield body -->
+  <path d="M64 14 L100 28 L100 62 C100 82 84 96 64 106 C44 96 28 82 28 62 L28 28 Z" fill="url(#shieldGrad)" stroke="#22c55e" stroke-width="2" filter="url(#glowFilter)"/>
+  <!-- Shield inner highlight -->
+  <path d="M64 22 L94 34 L94 62 C94 78 80 90 64 99 C48 90 34 78 34 62 L34 34 Z" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.4"/>
+  <!-- Checkmark -->
+  <polyline points="46,64 58,76 82,50" stroke="#22c55e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
