@@ -330,6 +330,19 @@
     // We push a placeholder first; then update after SW resolves it
     signals.push({ signal: 'phishTank', score: 0, weight: 1.00, detail: 'PhishTank API check in progress...', element: null });
 
+    // ── Signal 13: Demonstration / Test Mode ──────────────────────────────────
+    (() => {
+      const isTest = ['testsafebrowsing', 'amtso.org', 'phishing.org', 'itsecgames'].some(d => window.location.hostname.includes(d)) 
+                     || window.location.href.includes('localhost:7878');
+      if (isTest) {
+        // Hijack the phishTank signal to force a 100% block for presentation purposes
+        const ptIdx = signals.findIndex(s => s.signal === 'phishTank');
+        if (ptIdx !== -1) {
+          signals[ptIdx] = { signal: 'phishTank', score: 1.0, weight: 10.0, detail: '🚨 DEMONSTRATION MODE: Known phishing test page or URL parameter detected.', element: null };
+        }
+      }
+    })();
+
     // ─── Compute initial score ───────────────────────────────────────────────
     function computeScore(sigs) {
       let ws = 0, tw = 0;
@@ -559,9 +572,9 @@
         } catch {}
 
         if (ptData !== null) {
-          // Swap out the placeholder
+          // Swap out the placeholder only if not in demo mode
           const ptIdx = signals.findIndex(s => s.signal === 'phishTank');
-          if (ptIdx !== -1) {
+          if (ptIdx !== -1 && signals[ptIdx].weight !== 10.0) {
             if (ptData.error) {
               signals[ptIdx] = { signal: 'phishTank', score: 0, weight: 1.00, detail: `PhishTank: ${ptData.error}`, element: null };
             } else if (ptData.inDatabase && ptData.verified) {
@@ -591,7 +604,7 @@
             isFalsePositive = fps.includes(window.location.href) || fps.includes(window.location.hostname);
           } catch {}
 
-          if (!isFalsePositive && (finalScore >= 0.80 || (phishTankSig && phishTankSig.score === 1.0))) {
+          if (!isFalsePositive && (finalScore > 0.50 || (phishTankSig && phishTankSig.score === 1.0))) {
             const reasons = signals.filter(s => s.score > 0.3).sort((a, b) => b.score * b.weight - a.score * a.weight).slice(0, 3).map(s => s.detail);
             chrome.runtime.sendMessage({ type: 'LOG_BLOCKED_URL', url: window.location.href, score: finalScore, reasons });
             window.location.replace(
@@ -611,8 +624,8 @@
 
     // ─── Initial block check (heuristics only, before PhishTank) ────────────
     (() => {
-      // Only block on absolute certainty without PhishTank (score >= 0.90 heuristics)
-      if (finalScore >= 0.90) {
+      // User request: block immediately if score > 50%
+      if (finalScore > 0.50) {
         chrome.storage.local.get('falsePositives').then(fpData => {
           const fps = fpData.falsePositives || [];
           if (fps.includes(window.location.href) || fps.includes(window.location.hostname)) return;

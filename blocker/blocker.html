@@ -399,10 +399,10 @@
       <!-- Actions -->
       <div class="actions-row">
         <button class="btn-go-back" id="goBackBtn">
-          🛡️ Go Back Safely
+          🛡️ Exit
         </button>
         <button class="btn-proceed" id="proceedBtn">
-          ⚠ Proceed Anyway
+          ⚠ Still want to enter the website
         </button>
       </div>
 
@@ -480,32 +480,9 @@
     });
 
     // Proceed Flow
-    const proceedBtn     = document.getElementById('proceedBtn');
-    const proceedDialog  = document.getElementById('proceedDialog');
-    const riskPhrase     = document.getElementById('riskPhrase');
-    const riskCheckbox   = document.getElementById('riskCheckbox');
-    const confirmBtn     = document.getElementById('confirmProceedBtn');
+    const proceedBtn = document.getElementById('proceedBtn');
 
     proceedBtn.addEventListener('click', () => {
-      proceedDialog.classList.add('visible');
-      proceedBtn.style.display = 'none';
-    });
-
-    function checkProceedEligibility() {
-      const phraseOk = riskPhrase.value.trim().toLowerCase() === 'i understand the risk';
-      const checkOk  = riskCheckbox.checked;
-      if (phraseOk && checkOk) {
-        confirmBtn.classList.add('enabled');
-      } else {
-        confirmBtn.classList.remove('enabled');
-      }
-    }
-
-    riskPhrase.addEventListener('input', checkProceedEligibility);
-    riskCheckbox.addEventListener('change', checkProceedEligibility);
-
-    confirmBtn.addEventListener('click', () => {
-      if (!confirmBtn.classList.contains('enabled')) return;
       // Navigate to blocked URL bypassing blocker
       chrome.storage.local.get('falsePositives').then(data => {
         const fps = data.falsePositives || [];
