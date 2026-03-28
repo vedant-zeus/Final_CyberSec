@@ -647,11 +647,11 @@ export function checkBitBAttack() {
     const style = window.getComputedStyle(el);
     if (style.position !== 'fixed' && style.position !== 'absolute') return;
     const rect = el.getBoundingClientRect();
-    if (rect.width >= viewportW * 0.7 && rect.height >= viewportH * 0.7) {
+    if (rect.width >= viewportW * 0.5 && rect.height >= viewportH * 0.5) {
       const hasInputs = el.querySelector('input') !== null;
       const hasPasswordInput = el.querySelector('input[type="password"]') !== null;
       if (hasInputs && hasPasswordInput) {
-        findings.push('Full-viewport overlay with credential inputs — possible BitB attack');
+        findings.push('Large overlay with credential inputs — possible BitB attack');
         suspicionScore += 0.7;
       }
     }
